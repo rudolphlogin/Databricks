@@ -1,0 +1,42 @@
+#Simple R model script 
+
+# load libraries
+library(upsoracle)
+library(DBI)
+library(odbc)
+library(RODBC)
+library(httr)
+library(jsonlite)
+library(purrr)
+library(tidyr)
+library(tibble)
+library(ggplot2)
+library(sqldf)
+library(caret)
+library(randomForest)
+library(data.table)
+library(stringr)
+library(dplyr)
+library(e1071)
+
+
+#Data ingestion for slics cluster #1 with Regression Approach
+df <- sqlQuery(conn," With SA as 
+(
+  SELECT a.ORG_OGZ_NR
+  ,a.[ORG_CNY_CD]
+  --INTO #t
+  FROM [NPT_DM].[dbo].[TORG_DLY_SMY] a
+  LEFT JOIN [NPT_DM].[dbo].[Cluster] b
+  on a.ORG_OGZ_NR = convert(char,b.ORG_OGZ_NR)
+  and a.[ORG_CNY_CD] = b.[ORG_CNY_CD]
+  WHERE b.cluster = 1
+  GROUP BY 
+  a.ORG_OGZ_NR, a.[ORG_CNY_CD]
+  Having max(a.[ORG_SN_DT]) >= dateadd(week, -8, getdate())
+)
+
+lmMod1 <- lm(Y ~ DOW_CD + Peak+ SVC_GRP_CD + ORG_SRT_TYP_CD, data=df)  # build the model
+#distPred1 <- predict(lmMod, testData)  # predict distance
+summary(lmMod1)
+plot(lmMod1)
